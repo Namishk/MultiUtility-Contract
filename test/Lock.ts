@@ -45,7 +45,9 @@ describe("Lock", function () {
     it("Should set the right owner", async function () {
       const { lock, owner } = await loadFixture(deployOneYearLockFixture);
 
-      expect(await lock.read.owner()).to.equal(getAddress(owner.account.address));
+      expect(await lock.read.owner()).to.equal(
+        getAddress(owner.account.address)
+      );
     });
 
     it("Should receive and store the funds to lock", async function () {
@@ -123,8 +125,9 @@ describe("Lock", function () {
         await publicClient.waitForTransactionReceipt({ hash });
 
         // get the withdrawal events in the latest block
-        const withdrawalEvents = await lock.getEvents.Withdrawal()
+        const withdrawalEvents = await lock.getEvents.Withdrawal();
         expect(withdrawalEvents).to.have.lengthOf(1);
+        // @ts-ignore
         expect(withdrawalEvents[0].args.amount).to.equal(lockedAmount);
       });
     });
