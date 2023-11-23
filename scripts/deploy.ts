@@ -1,26 +1,25 @@
-import { formatEther, parseEther } from "viem";
-import hre from "hardhat";
-
+import { ethers } from "hardhat";
 async function main() {
-  const currentTimestampInSeconds = Math.round(Date.now() / 1000);
-  const unlockTime = BigInt(currentTimestampInSeconds + 60);
+  const name = "MyMultilityToken";
+  const symbol = "MMT";
 
-  const lockedAmount = parseEther("0.001");
+  const utilities = [
+    [1, "Utility A", "0x1234567890abcdef1234567890abcdef12345678", true],
+    [2, "Utility B", "0xf11d8A2BF17D04C50CfB6ba505e1e88c4BD4b673", false],
+  ];
 
-  const lock = await hre.viem.deployContract("Lock", [unlockTime], {
-    value: lockedAmount,
-  });
+  const mContract = await ethers.deployContract("Multiutility", [
+    name,
+    symbol,
+    utilities,
+  ]);
 
-  console.log(
-    `Lock with ${formatEther(
-      lockedAmount
-    )}ETH and unlock timestamp ${unlockTime} deployed to ${lock.address}`
-  );
+  console.log(`Multility contract deployed to: ${mContract.getAddress()}`);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
 // and properly handle errors.
 main().catch((error) => {
   console.error(error);
-  process.exitCode = 1;
+  process.exit(1);
 });
