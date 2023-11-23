@@ -12,8 +12,9 @@ contract Multiutility is ERC721 {
         address issuer;
         bool transferable;
     }
-    uint256 private tokenID = 0;
 
+    address private owner;
+    uint256 private tokenID = 0;
     Utility[] private _utilities;
     uint256[] private _utilityIDs;
     mapping(uint256 => Utility) private _utilityMap;
@@ -24,7 +25,12 @@ contract Multiutility is ERC721 {
         string memory symbol_,
         Utility[] memory utilities_
     ) ERC721(name_, symbol_) {
+        owner = msg.sender;
         for (uint256 i = 0; i < utilities_.length; i++) {
+            require(
+                utilities_[i].issuer == address(0),
+                "Error: utility issuer cannot be zero address"
+            );
             _utilities.push(utilities_[i]);
             _utilityIDs.push(_utilities[i].id);
             _utilityMap[_utilities[i].id] = _utilities[i];
@@ -63,10 +69,82 @@ contract Multiutility is ERC721 {
             msg.sender == ownerOf(tokenId),
             "Error: caller is not the owner of the token"
         );
+        require(
+            _tokenUtilities[tokenId].length != 0,
+            "Error: caller doesn't have any utilities to transfer"
+        );
+        require(
+            receiver != address(0),
+            "Error: receiver address cannot be zero address"
+        );
+
         tokenID = tokenID + 1;
         _safeMint(receiver, tokenID);
         _tokenUtilities[tokenID] = _tokenUtilities[tokenId];
         delete _tokenUtilities[tokenId]; // deleting mapping
+    }
+
+    function addUtilities(Utility memory utility) public {
+        require(
+            msg.sender == owner,
+            "Error: caller is not the owner of the contract"
+        );
+        require(
+            _utilityMap[utility.id].issuer == address(0),
+            "Error: utility ID already exists"
+        );
+        require(
+            utility.issuer != address(0),
+            "Error: utility issuer cannot be zero address"
+        );
+        require(
+            utility.transferable == true || utility.transferable == false,
+            "Error: utility transferable value can only be true or false"
+        );
+        _utilities.push(utility);
+        _utilityIDs.push(utility.id);
+        _utilityMap[utility.id] = utility;
+    }
+
+    function mintNewUtilityToNFT(uint256 tokenId, uint256 utilityIndex) public {
+        require(
+            msg.sender == owner,
+            "Error: caller is not the owner of the contract"
+        );
+        require(
+            _utilityMap[utilityIndex].issuer != address(0),
+            "Error: invalid utility ID passed"
+        );
+        require(
+            _tokenUtilities[tokenId].length < _utilities.length,
+            "Error: all utilities already minted"
+        );
+        require(
+            _checkUtilityIndex(new uint256[](utilityIndex)) == true,
+            "Error: invalid utility ID passed"
+        );
+        require(
+            _check(tokenId, utilityIndex) == false,
+            "Error: utility already minted to this token"
+        );
+
+        _tokenUtilities[tokenId].push(utilityIndex);
+    }
+
+    function _check(
+        uint256 tokenId,
+        uint256 index
+    ) internal view returns (bool) {
+        require(
+            _tokenUtilities[tokenId].length == 0,
+            "Error: This token has no utilites"
+        );
+        for (uint256 i = 0; i < _tokenUtilities[tokenId].length; i++) {
+            if (_tokenUtilities[tokenId][i] == index) {
+                return true;
+            }
+        }
+        return false;
     }
 
     function _getUtilitiesOf(
